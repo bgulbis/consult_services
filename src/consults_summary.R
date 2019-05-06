@@ -1,5 +1,7 @@
 library(tidyverse)
 library(lubridate)
+library(readxl)
+library(openxlsx)
 
 dir_data <- "data/tidy/mbo"
 tz_locale <- locale(tz = "US/Central")
@@ -47,6 +49,29 @@ df_pts_month <- data_consults %>%
     distinct(encounter_id, task_month, mnemonic) %>%
     count(task_month, mnemonic)
 
-ggplot(df_consults_day, aes(x = task_day, y = n)) +
-    geom_line(aes(color = mnemonic))
+# ggplot(df_consults_day, aes(x = task_day, y = n)) +
+#     geom_line(aes(color = mnemonic))
 
+data_vanc <- read_excel(
+    "/mnt/hgfs/W_Pharmacy/Dosing Services/vancomycin_utilization.xlsx"
+) %>%
+    mutate_at("month", force_tz, tzone = "US/Central")
+
+data_month <- floor_date(rollback(now(), FALSE, FALSE), unit = "month")
+
+df_pts_month %>%
+    filter(
+        mnemonic == "Vancomycin",
+        task_month <= data_month
+    ) %>%
+    select(
+        month = task_month,
+        num_patients = n
+    ) %>%
+    bind_rows(data_vanc) %>%
+    arrange(month) %>%
+    mutate_at("month", floor_date, unit = "month") %>%
+    distinct(month, .keep_all = TRUE) %>%
+    write.xlsx(
+        "/mnt/hgfs/W_Pharmacy/Dosing Services/vancomycin_utilization.xlsx"
+    )
