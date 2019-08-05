@@ -1,25 +1,11 @@
 library(tidyverse)
 library(lubridate)
 library(readxl)
+library(mbohelpr)
 library(openxlsx)
 
 dir_data <- "data/tidy/mbo"
 tz_locale <- locale(tz = "US/Central")
-
-get_data <- function(path, pattern, col_types = NULL) {
-    f <- list.files(path, pattern, full.names = TRUE)
-    
-    n <- f %>% 
-        purrr::map_int(~ nrow(data.table::fread(.x, select = 1L))) 
-    
-    f[n > 0] %>%
-        purrr::map_df(
-            readr::read_csv,
-            locale = tz_locale,
-            col_types = col_types
-        ) %>%
-        rename_all(stringr::str_to_lower)
-}
 
 data_consults <- get_data(dir_data, "tasks_dosing_services") %>%
     mutate_at(
